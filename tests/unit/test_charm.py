@@ -15,7 +15,7 @@ from charm import SnipsK8SOperatorCharm
 class TestCharm(unittest.TestCase):
     def setUp(self):
         mock_hmac_key = patch(
-            "charm.SnipsK8SOperatorCharm._hmac_key", new_callable=PropertyMock, return_value="D10S"
+            "secret_manager.SecretManager.hmac_key", new_callable=PropertyMock, return_value="D10S"
         )
         self.mock_hmac_key = mock_hmac_key.start()
         self.harness = ops.testing.Harness(SnipsK8SOperatorCharm)
