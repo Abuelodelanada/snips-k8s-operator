@@ -14,9 +14,11 @@ https://discourse.charmhub.io/t/4208
 
 import logging
 import secrets
+import socket
 import string
 from typing import Dict
 
+from charms.catalogue_k8s.v1.catalogue import CatalogueConsumer, CatalogueItem
 from ops import PebbleReadyEvent
 from ops.charm import CharmBase
 from ops.main import main
@@ -41,10 +43,12 @@ SERVICE_NAME = CONTAINER_NAME
 
 class SnipsK8SOperatorCharm(CharmBase):
     """Charm the service."""
+    _port = HTTP_PORT
 
     def __init__(self, *args):
         super().__init__(*args)
         self._container = self.unit.get_container(CONTAINER_NAME)
+        self.catalogue = CatalogueConsumer(charm=self, item=self._catalogue_item)
         self.framework.observe(self.on.snips_pebble_ready, self._on_snips_pebble_ready)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
         self.framework.observe(self.on.update_status, self._on_update_status)
@@ -135,6 +139,32 @@ class SnipsK8SOperatorCharm(CharmBase):
             "SNIPS_HMACKEY": self._hmac_key,
         }
         return env_vars
+
+    @property
+    def _catalogue_item(self) -> CatalogueItem:
+        return CatalogueItem(
+            name="Snips",
+            icon="math-log",
+            # Loki does not have a flashy web UI but something is better than nothing
+            # https://grafana.com/docs/loki/latest/reference/api/
+            url=self.internal_url,
+            description=(
+                "Snips SSH-powered pastebin with a human-friendly TUI and web UI"
+            ),
+        )
+
+
+    @property
+    def hostname(self) -> str:
+        """Unit's hostname."""
+        return socket.getfqdn()
+
+    @property
+    def internal_url(self):
+        """Fqdn plus appropriate scheme and server port."""
+        scheme = "http"
+        return f"{scheme}://{self.hostname}:{self._port}"
+
 
 
 if __name__ == "__main__":  # pragma: nocover

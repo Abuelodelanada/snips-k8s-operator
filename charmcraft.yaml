@@ -35,3 +35,9 @@ resources:
     type: oci-image
     description: OCI image for snips
     upstream-source: ghcr.io/robherley/snips.sh:v0.3.2
+
+requires:
+  catalogue:
+    interface: catalogue
+    optional: true
+    description: Add Loki as an item to a Catalogue charm.
