@@ -18,7 +18,7 @@ import socket
 import string
 from typing import Dict
 
-from charms.catalogue_k8s.v1.catalogue import CatalogueConsumer, CatalogueItem
+from charms.catalogue_k8s.v2.catalogue import CatalogueConsumer, CatalogueItem
 from ops import PebbleReadyEvent
 from ops.charm import CharmBase
 from ops.main import main
@@ -48,25 +48,27 @@ class SnipsK8SOperatorCharm(CharmBase):
     def __init__(self, *args):
         super().__init__(*args)
         self._container = self.unit.get_container(CONTAINER_NAME)
-        self.catalogue = CatalogueConsumer(charm=self, item=self._catalogue_item)
         self.framework.observe(self.on.snips_pebble_ready, self._on_snips_pebble_ready)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
         self.framework.observe(self.on.update_status, self._on_update_status)
+        self._reconcile()
 
     def _on_snips_pebble_ready(self, _: PebbleReadyEvent):
-        self._common_exit_hook()
+        self._reconcile()
 
     def _on_config_changed(self, _):
-        self._common_exit_hook()
+        self._reconcile()
 
     def _on_update_status(self, _):
-        self._common_exit_hook()
+        self._reconcile()
 
-    def _common_exit_hook(self) -> None:
+    def _reconcile(self) -> None:
         """Event processing hook that is common to all events to ensure idempotency."""
         if not self._container.can_connect():
             self.unit.status = MaintenanceStatus("Waiting for pod startup to complete")
             return
+
+        self._update_catalogue()
 
         # Update pebble layer
         if not self._update_layer():
@@ -74,6 +76,15 @@ class SnipsK8SOperatorCharm(CharmBase):
             return
 
         self.unit.status = ActiveStatus()
+
+    def _update_catalogue(self) -> None:
+        self.framework.breakpoint()
+
+        relations = self.model.relations["catalogue"]
+        app = self.model.app
+        is_leader = self.unit.is_leader()
+        CatalogueConsumer.update_item(self._catalogue_item, relations, app, is_leader)
+
 
     def _update_layer(self) -> bool:
         """Update service layer.
@@ -144,9 +155,7 @@ class SnipsK8SOperatorCharm(CharmBase):
     def _catalogue_item(self) -> CatalogueItem:
         return CatalogueItem(
             name="Snips",
-            icon="math-log",
-            # Loki does not have a flashy web UI but something is better than nothing
-            # https://grafana.com/docs/loki/latest/reference/api/
+            icon="code",
             url=self.internal_url,
             description=(
                 "Snips SSH-powered pastebin with a human-friendly TUI and web UI"
