@@ -48,19 +48,8 @@ class SnipsK8SOperatorCharm(CharmBase):
     def __init__(self, *args):
         super().__init__(*args)
         self._container = self.unit.get_container(CONTAINER_NAME)
-        self.framework.observe(self.on.snips_pebble_ready, self._on_snips_pebble_ready)
-        self.framework.observe(self.on.config_changed, self._on_config_changed)
-        self.framework.observe(self.on.update_status, self._on_update_status)
         self._reconcile()
 
-    def _on_snips_pebble_ready(self, _: PebbleReadyEvent):
-        self._reconcile()
-
-    def _on_config_changed(self, _):
-        self._reconcile()
-
-    def _on_update_status(self, _):
-        self._reconcile()
 
     def _reconcile(self) -> None:
         """Event processing hook that is common to all events to ensure idempotency."""
