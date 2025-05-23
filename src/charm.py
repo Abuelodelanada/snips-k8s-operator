@@ -78,8 +78,6 @@ class SnipsK8SOperatorCharm(CharmBase):
         self.unit.status = ActiveStatus()
 
     def _update_catalogue(self) -> None:
-        self.framework.breakpoint()
-
         relations = self.model.relations["catalogue"]
         app = self.model.app
         is_leader = self.unit.is_leader()
