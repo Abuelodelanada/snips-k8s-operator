@@ -18,8 +18,7 @@ import socket
 import string
 from typing import Dict
 
-from charms.catalogue_k8s.v2.catalogue import CatalogueConsumer, CatalogueItem
-from ops import PebbleReadyEvent
+from charms.catalogue_k8s.v2.catalogue import CatalogueRequirer, CatalogueItem
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import (
@@ -67,10 +66,11 @@ class SnipsK8SOperatorCharm(CharmBase):
         self.unit.status = ActiveStatus()
 
     def _update_catalogue(self) -> None:
+        self.framework.breakpoint()
         relations = self.model.relations["catalogue"]
         app = self.model.app
         is_leader = self.unit.is_leader()
-        CatalogueConsumer.update_item(self._catalogue_item, relations, app, is_leader)
+        CatalogueRequirer.update_item(self._catalogue_item, relations, app, is_leader)
 
 
     def _update_layer(self) -> bool:

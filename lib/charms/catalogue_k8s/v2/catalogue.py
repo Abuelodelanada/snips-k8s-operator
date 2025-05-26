@@ -4,10 +4,11 @@
 """Charm for providing services catalogues to bundles or sets of charms."""
 
 import logging
-from dataclasses import dataclass
-from typing import Dict, List
+from dataclasses import asdict, dataclass
+from typing import TYPE_CHECKING, Dict, List
 
-from ops.model import Application, Relation
+if TYPE_CHECKING:
+    from ops.model import Application, Relation
 
 LIBID = "fa28b361293b46668bcd1f209ada6983"
 LIBAPI = 2
@@ -29,34 +30,22 @@ class CatalogueItem:
     icon: str
     description: str = ""
 
-class CatalogueConsumer:
-    """`CatalogueConsumer` is used to send over a `CatalogueItem`."""
+class CatalogueRequirer:
+    """`CatalogueRequirer` is used to send over a `CatalogueItem`."""
 
     @staticmethod
-    def update_item(item: CatalogueItem, relations: List[Relation] , app: Application, is_leader: bool = False):
+    def update_item(item: CatalogueItem, relations: List["Relation"] , app: "Application", is_leader: bool = False):
         """Update item on Catalogue."""
         if not is_leader:
             return
 
         for relation in relations:
-            relation.data[app]["name"] = item.name
-            relation.data[app]["description"] = item.description
-            relation.data[app]["url"] = item.url
-            relation.data[app]["icon"] = item.icon
+            relation.data[app].update(asdict(item))
 
-class CatalogueProvider():
+class CatalogueProvider:
     """`CatalogueProvider` is the side of the relation that serves the actual service catalogue."""
 
     @staticmethod
-    def items(relations: List[Relation]) -> List[Dict]:
+    def items(relations: List["Relation"]) -> List[Dict]:
         """List of apps sent over relation data."""
-        return [
-            {
-                "name": relation.data[relation.app].get("name", ""),
-                "url": relation.data[relation.app].get("url", ""),
-                "icon": relation.data[relation.app].get("icon", ""),
-                "description": relation.data[relation.app].get("description", ""),
-            }
-            for relation in relations
-            if relation.app and relation.units
-        ]
+        return [dict(relation.data[relation.app]) for relation in relations if relation.app and relation.units]
